@@ -9,6 +9,12 @@ Author URI: http://www.pjgalbraith.com
 License: GPL2 
 */
 
+/*
+ * Phuc PN.Truong
+ * This plugins did support the multi images for on category or tag.
+ * This plugins did not cached category images
+ */
+
 /*  Copyright 2011  Patrick Galbraith  (email : patrick.j.galbraith@gmail.com)
 
     This program is free software; you can redistribute it and/or modify
@@ -60,6 +66,7 @@ class DefaultPostThumbnailPlugin {
 		register_setting( 'dpp-options', 'dpt_meta_key' );
 		register_setting( 'dpp-options', 'dpt_use_first_attachment' );
 		register_setting( 'dpp-options', 'dpt_excluded_posts' );
+        register_setting('dpp-options', 'dpt_post_img_cached');
 	}
 	
 	/*-------------------------------------------------------------
@@ -74,7 +81,6 @@ class DefaultPostThumbnailPlugin {
 	-------------------------------------------------------------*/
 	
 	static function default_post_thumbnail_html($html, $post_id, $post_thumbnail_id, $size, $attr) {
-	    
 		if ( $post_thumbnail_id ) {
 			// 1. Do nothing as this will be handled by the core function
 		} else {
@@ -123,11 +129,19 @@ class DefaultPostThumbnailPlugin {
 			if($default_post_thumbnail_id === FALSE) {
 				foreach($dpt_options as $key => $dpt_option_arr) {
 					
-					if($key == 'default') continue; 
+                    if ($key == 'default')
+                        continue;
+                    foreach ($dpt_option_arr as $catslug => $dpt_optionArr) {
+                        if (is_object_in_term($post_id, $key, $catslug)) { //!empty($dpt_option['attachment_id']) && 
+                            //choose randomly the image
+                            $i = array_rand($dpt_optionArr);
+                            $default_post_thumbnail_id = $dpt_optionArr[$i]['attachment_id'];
 					
-					foreach($dpt_option_arr as $dpt_option) {
-						if( is_object_in_term($post_id, $key, $dpt_option['value']) ) { //!empty($dpt_option['attachment_id']) && 
-							$default_post_thumbnail_id = $dpt_option['attachment_id'];
+                            //store cached img
+                            update_post_meta($post_id, '_thumbnail_id', $default_post_thumbnail_id);
+                            $postImgCached = get_option('dpt_post_img_cached', array());
+                            $postImgCached[] = $post_id;
+                            update_option('dpt_post_img_cached', $postImgCached);
 						} 
 					}
 				}
@@ -181,9 +195,7 @@ class DefaultPostThumbnailPlugin {
 			return;
 		
 		wp_enqueue_script(
-			'dpt_admin_script', 
-			plugins_url('admin-script.js', __FILE__),
-			array('jquery')
+            'dpt_admin_script', plugins_url('admin-script.js', __FILE__), array('jquery')
 		);
 	}
 	
@@ -205,6 +217,20 @@ class DefaultPostThumbnailPlugin {
 				-moz-box-shadow: 0px 0px 5px 1px rgba(0, 0, 0, 0.5);
 				box-shadow: 0px 0px 5px 1px rgba(0, 0, 0, 0.5); 
 			}
+            .dtp-item img{
+                width: 80px;
+                height: 80px;
+                border: solid 2px white;
+                margin-bottom: 4px;
+                margin-top: 6px;
+
+                -webkit-box-shadow: 0px 0px 5px 1px rgba(0, 0, 0, 0.5);
+                -moz-box-shadow: 0px 0px 5px 1px rgba(0, 0, 0, 0.5);
+                box-shadow: 0px 0px 5px 1px rgba(0, 0, 0, 0.5); 
+            }
+            .dtp-item{
+                float:left;
+            }
 			.widefat td {
 				vertical-align: middle;
 			}
@@ -226,13 +252,27 @@ class DefaultPostThumbnailPlugin {
 	
 	static function handle_options_update() {
 		
+        if(isset($_POST['clear_cached'])){
+            $postCached = get_option('dpt_post_img_cached');
+            delete_option('dpt_post_img_cached');
+            for($i = 0; $i < count($postCached); $i++){
+                delete_post_thumbnail($postCached[$i]);
+            }
+            return;
+        }
+
 		$dpt_options = array();
 		$count = 1;
 		$dpt_options['default'] = array('attachment_id' => $_POST['attachment_id_default'], 'value' => '');		
+        $count          = $_POST['countimg'];
 		
-		while( isset($_POST['filter_name_'.$count]) ) {
-			$dpt_options[$_POST['filter_name_'.$count]][] = array('attachment_id' => $_POST['attachment_id_'.$count], 'value' => $_POST['filter_value_'.$count]);
-			$count++;
+        for ($i = 1; $i <= $count; $i++) {
+            if (isset($_POST['filter_name_' . $i]) && !isset($_POST['attachment_id_'.$i.'_remove'])) {
+                $dpt_options[$_POST['filter_name_' . $i]][$_POST['filter_value_' . $i]][] = array(
+                    'attachment_id' => $_POST['attachment_id_' . $i],
+                    'value'         => $_POST['filter_value_' . $i]
+                );
+            }
 		}
 		
 		update_option( 'dpt_options', $dpt_options );
@@ -260,7 +300,6 @@ class DefaultPostThumbnailPlugin {
 		foreach(self::$default_config as $name => $value) {
 			$$name = get_option($name, $value);
 		}
-		
 		?>
         <div class="wrap">
 		<?php screen_icon(); ?>
@@ -276,7 +315,7 @@ class DefaultPostThumbnailPlugin {
                     <th class="row-title"><?php _e('Image') ?></th>
                     <th><?php _e('Taxonomy') ?></th>
                     <th><?php _e('Value') ?></th>
-                    <th><?php _e('Description') ?></th>
+                                <th><?php _e('Description + More images') ?></th>
                     <th>&nbsp;</th>
                 </tr>
             </thead>
@@ -291,16 +330,30 @@ class DefaultPostThumbnailPlugin {
                         </select>
                     </td>
                     <td style="color:#999">-</td>
-                    <td>This is the default thumbnail that will be loaded if the post has no featured image set.</td>
+                                <td>This is the default thumbnail that will be loaded if the post has no featured image set.
+                                </td>
                     <td></td>
                 </tr>
                 
                 <?php 
 				$count = 1; 
 				foreach($dpt_options as $key => $dpt_option_arr): 
-					if($key == 'default') { continue; } 
+                                if ($key == 'default') {
+                                    continue;
+                                }
+                                // for traversing through the term slug in category
+                                $index = 0;
 					
-					foreach($dpt_option_arr as $dpt_option) : ?>
+                                foreach ($dpt_option_arr as $catslug => $dpt_optionArr) :
+                                    $moreImages = array();
+                                    if (isset($dpt_option_arr['attachment_id'])) {
+                                        $dpt_option = $dpt_optionArr;
+                                    } else {
+                                        $dpt_option = array_shift($dpt_optionArr);
+                                        $moreImages = $dpt_optionArr;
+                                        $index++;
+                                    }
+                                    ?>
                 	
                     <tr data-attachment_id="<?php echo $dpt_option['attachment_id']; ?>" data-taxonomy="<?php echo $key; ?>" data-value="<?php echo $dpt_option['value']; ?>" data-array_index="<?php echo $count; ?>">
                         <td class="row-title"><?php dtp_slt_fs_button( 'attachment_id_'.$count, $dpt_option['attachment_id'], 'Select image', 'thumbnail', false ) ?></td>
@@ -319,11 +372,31 @@ class DefaultPostThumbnailPlugin {
                         <td style="color:#CCC">
                              <input name="filter_value_<?php echo $count; ?>" type="text" value="<?php echo $dpt_option['value']; ?>" class="filter_value regular-text" style="width: 100px;" required="required" />
                         </td>
-                        <td class="row_description"></td>
+                                        <td class="row_description">
+                                            <div class="more-img-section">
+                                                <?php foreach ($moreImages as $img): 
+                                                   $count++; 
+                                                    ?>
+                                                    <div class="dtp-item"><?php dtp_slt_fs_button('attachment_id_' . $count, $img['attachment_id'], 'Select image', 'thumbnail', true) ?>
+    <input type="hidden" name="filter_name_<?php echo $count?>" value="<?php echo $key;?>" />
+    <input type="hidden" name="filter_value_<?php echo $count?>" value="<?php echo $catslug;?>" />
+                                                    </div>
+                                                    <?php
+                                                endforeach;
+                                                ?>
+                                            </div>
+                                            <div style="clear:both"></div>
+
+                                            <input type="button" class="button-secondary slt-fs-button-more" value="<?php echo esc_attr('More image...'); ?>" />
+                                        </td>
                         <td class="row_actions"><a href="javascript:void(0)" onclick="dpt_remove_row(this)"><img alt="Delete Icon" src="<?php echo plugins_url('/default-thumbnail-plus/img/icon-delete.png'); ?>" /></a></td>
                     </tr>
                     
-                <?php $count++; endforeach; endforeach; ?>
+                                    <?php
+                                    $count++;
+                                endforeach;
+                            endforeach;
+                            ?>
                 
                 <tr id="template_row" class="alternate" data-attachment_id="" data-taxonomy="" data-value="" data-array_index="">
                     <td class="row-title"><?php dtp_slt_fs_button( 'attachment_id_template', '', 'Select image', 'thumbnail', false ) ?></td>
@@ -342,7 +415,14 @@ class DefaultPostThumbnailPlugin {
                     <td style="color:#CCC">
                          <input type="text" value="" class="filter_value regular-text" style="width: 100px;" required="required" />
                     </td>
-                    <td class="row_description"></td>
+                                <td class="row_description">
+                                    <div class="more-img-section">
+                                        <div class="dtp-item">
+        <?php dtp_slt_fs_button('attachment_id_sample', 'sample', 'Select image', 'thumbnail', true) ?></div>
+                                    </div>
+                                    <div style="clear:both"></div>
+                                    <input type="button" class="button-secondary slt-fs-button-more" value="<?php echo esc_attr('More image...'); ?>" />
+                                </td>
                     <td class="row_actions"><a href="javascript:void(0)" onclick="dpt_remove_row(this)"><img alt="Delete Icon" src="<?php echo plugins_url('/default-thumbnail-plus/img/icon-delete.png'); ?>" /></a></td>
                 </tr>
             </tbody>
@@ -352,6 +432,7 @@ class DefaultPostThumbnailPlugin {
                 </tr>
             </tfoot>
         </table>
+                    <input type="hidden" value="<?php echo $count?>" name="countimg" id="countimg"/>
         
         <br/>
         <p style="margin-top:25px;">
@@ -380,11 +461,18 @@ class DefaultPostThumbnailPlugin {
         <br/>
         <p><input id="dpt_submit-btn" class="button-primary" type="submit" name="Save" value="<?php _e( 'Save Changes' ); ?>" /></p>
         </form>
+                <form name="dpt_options_form" method="post" action=""> 
+                    <?php settings_fields('dpp-options'); ?>
+                    <input type="hidden" name="dpt_submit_hidden" value="Y">
+                    <input id="dpt-clear-cached" class="button-primary" type="submit" name="clear_cached" value="<?php _e('Clear thumbnail cached')?>" />
+                </form>
         </div>
         <?php
 	}
 	 
-}//end class
+    }
+
+    //end class
 
 add_action( 'after_setup_theme', 'dpt_add_theme_support', 99 ); //we want this to run last so we can override any previous post-thumbnail support settings
 
