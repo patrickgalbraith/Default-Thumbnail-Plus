@@ -35,7 +35,6 @@ class DefaultPostThumbnailPlugin {
     private static $default_config = array(
         'dpt_options' => array(
                             'default' => array('attachment_id' => '', 'value' => '')
-                            //'tag_id' => array( array('attachment_id' => FALSE, 'value' => ''), array('attachment_id' => FALSE, 'value' => '') )
                             ),
         'dpt_meta_key' => '',
         'dpt_use_first_attachment' => true,
@@ -126,7 +125,7 @@ class DefaultPostThumbnailPlugin {
                     if($key == 'default') continue; 
                     
                     foreach($dpt_option_arr as $dpt_option) {
-                        if( is_object_in_term($post_id, $key, $dpt_option['value']) ) { //!empty($dpt_option['attachment_id']) && 
+                        if( is_object_in_term($post_id, $key, $dpt_option['value']) ) {
                             $default_post_thumbnail_id = $dpt_option['attachment_id'];
                         } 
                     }
@@ -231,7 +230,10 @@ class DefaultPostThumbnailPlugin {
         $dpt_options['default'] = array('attachment_id' => $_POST['attachment_id_default'], 'value' => '');        
         
         while( isset($_POST['filter_name_'.$count]) ) {
-            $dpt_options[$_POST['filter_name_'.$count]][] = array('attachment_id' => $_POST['attachment_id_'.$count], 'value' => $_POST['filter_value_'.$count]);
+			$value = explode(',', $_POST['filter_value_'.$count]); //explode comma separated string on comma
+			array_walk($value, create_function('&$val', '$val = trim($val);')); //trim spaces
+			
+            $dpt_options[$_POST['filter_name_'.$count]][] = array('attachment_id' => $_POST['attachment_id_'.$count], 'value' => $value);
             $count++;
         }
         
@@ -386,12 +388,25 @@ class DefaultPostThumbnailPlugin {
      
 }//end class
 
-add_action( 'after_setup_theme', 'dpt_add_theme_support', 99 ); //we want this to run last so we can override any previous post-thumbnail support settings
+add_action( 'after_setup_theme', 'dpp_add_theme_support', 99 ); //we want this to run last so we can override any previous post-thumbnail support settings
 
-function dpt_add_theme_support() {
+function dpp_add_theme_support() {
     if ( function_exists( 'add_theme_support' ) ) { 
         add_theme_support( 'post-thumbnails' ); 
     }
+}
+
+//Global function which returns the image src for a specified post
+function dpp_get_default_image_src($post_id, $size) {
+	$img_tag = get_the_post_thumbnail($post_id, $size);
+	$matches = array();
+	
+	preg_match('/src=[\'"](.*?)[\'"]/i', $img_tag, $matches); //yes it is bad to use regex to parse html (-_-);
+	
+	if(isset($matches[1]))
+		return $matches[1];
+    else
+	    return '';
 }
 
 register_activation_hook( __FILE__, array('DefaultPostThumbnailPlugin', 'install') );
