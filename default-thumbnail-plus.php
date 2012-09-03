@@ -100,14 +100,14 @@ class DefaultPostThumbnailPlugin {
                     global $_wp_additional_image_sizes;
                     $other_attr = '';
                     
-                    if( isset( $_wp_additional_image_sizes[$size] ) ) {
-                        $width = $_wp_additional_image_sizes[$size]['width'];
-                        $height = $_wp_additional_image_sizes[$size]['height'];
-                        $other_attr = image_hwstring($width, $height).'class="attachment-'.$size.' wp-post-image"';
-                    } else if(is_array($size)) {
+                    if(is_array($size)) {
                         $width = $size[0];
                         $height = $size[1];
                         $other_attr = image_hwstring($width, $height).'class="attachment-'.$width.'x'.$height.' wp-post-image"';
+                    } else if( isset( $_wp_additional_image_sizes[$size] ) ) {
+                        $width = $_wp_additional_image_sizes[$size]['width'];
+                        $height = $_wp_additional_image_sizes[$size]['height'];
+                        $other_attr = image_hwstring($width, $height).'class="attachment-'.$size.' wp-post-image"';
                     }
                     
                     return '<img src="'.$default_post_thumbnail_id.'" '.$other_attr.' />';
