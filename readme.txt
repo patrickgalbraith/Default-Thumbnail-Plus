@@ -30,6 +30,13 @@ See documentation at http://www.pjgalbraith.com/2011/12/default-thumbnail-plus/
 
 == Changelog ==
 
+= 1.0.2 =
+* New option "Use embedded image if available"
+* New option "Use embedded video thumbnail if available"
+* Fixed issues with new themes
+* get_post_thumbnail_id() should now return correct result
+* Better out-of-box theme support
+
 = 1.0.1 =
 * Fixed slt_file_select update loop
 * Fixed file chooser not working
@@ -42,6 +49,9 @@ See documentation at http://www.pjgalbraith.com/2011/12/default-thumbnail-plus/
 * Beta release
 
 == Upgrade Notice ==
+
+= 1.0.2 =
+New options, and better theme support
 
 = 1.0.1 =
 Fixed slt_file_select update loop, file chooser not working and other issues
