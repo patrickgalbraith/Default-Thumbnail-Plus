@@ -244,7 +244,18 @@ class DefaultPostThumbnailPlugin {
 	static function filter_get_post_metadata($metadata, $object_id, $meta_key, $single) {
         
         if(isset($meta_key) && '_thumbnail_id' === $meta_key) {
-			$result = self::default_post_thumbnail_html('', $object_id, null, null, '', true);
+			
+			//Temporarily remove filter
+			remove_filter('get_post_metadata', array('DefaultPostThumbnailPlugin', 'filter_get_post_metadata'), true, 4);
+			
+			//check if there is a existing thumbnail for this post
+			$result = get_metadata('post', $object_id, $meta_key, $single);
+			
+			if(empty($result))
+			    $result = self::default_post_thumbnail_html('', $object_id, null, null, '', true);
+			
+			//Add filter again
+			add_filter('get_post_metadata', array('DefaultPostThumbnailPlugin', 'filter_get_post_metadata'), true, 4);
 			
 			if(!empty($result))
 				return $result;
