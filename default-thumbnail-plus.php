@@ -71,13 +71,17 @@ class DefaultPostThumbnailPlugin {
     - 1 Featured Image
      |- 2 Custom field
       |- 3 Image attachment
-       |- 4 Category/Tag/Taxonomy Thumbnail
-        |- 5 Default thumbnail
-         |- 6 nothing
+	   |- 4 Embedded images
+	    |- 5 Embedded video
+         |- 6 Category/Tag/Taxonomy Thumbnail
+          |- 7 Default thumbnail
+           |- 8 nothing
     -------------------------------------------------------------*/
     
     static function default_post_thumbnail_html($html, $post_id, $post_thumbnail_id, $size, $attr, $return_id = false) {
         
+		$post_thumbnail_id = get_metadata('post', $post_id, '_thumbnail_id');
+		
         if ( $post_thumbnail_id ) {
             // 1. Do nothing as this will be handled by the core function
         } else {
@@ -111,30 +115,29 @@ class DefaultPostThumbnailPlugin {
             if($default_post_thumbnail === FALSE && get_option('dpt_use_first_attachment'))
                 $default_post_thumbnail = self::get_first_post_attachment_id($post_id);
             
+			//Get info about the post
+			$post = get_post($post_id);
+			
 			// 4. Get img tags from content
 			if($default_post_thumbnail === FALSE && get_option('dpt_use_embedded_img')) {
 				
-				$output = preg_match_all( '/<img.+src=[\'"]([^\'"]+)[\'"].*>/i', $post->post_content, $matches);
+				preg_match_all( '/<img.+src=[\'"]([^\'"]+)[\'"].*>/i', $post->post_content, $matches);
 				
-				if ( !empty($matches[1][0]) ) {
+				if(!empty($matches[1][0])) {
 					$other_attr = self::get_attr_string($size);
 					$image_src = $matches[1][0];
-					return '<img src="'.$video_image_url.'" '.$other_attr.' />'; 
+					return '<img src="'.$image_src.'" '.$other_attr.' />'; 
 				}
 			}
 			
-			// 5. Check if there is a video embed
+			// 5. Check if there is an embedded video
 			if($default_post_thumbnail === FALSE && get_option('dpt_use_embedded_video')) {
 				
-				$embed = get_post_meta($post_id, "embed", true);
+				$video_image_url = self::get_video_image($post->post_content);
 				
-				if(!empty($embed)) {
-					$video_image_url = self::get_video_image($embed);
-					
-					if($video_image_url !== false) {
-						$other_attr = self::get_attr_string($size);
-						return '<img src="'.$video_image_url.'" '.$other_attr.' />'; 
-					}
+				if(!empty($video_image_url)) {
+					$other_attr = self::get_attr_string($size);
+					return '<img src="'.$video_image_url.'" '.$other_attr.' />'; 
 				}
 			}
 			
@@ -142,7 +145,8 @@ class DefaultPostThumbnailPlugin {
             if($default_post_thumbnail === FALSE) {
                 foreach($dpt_options as $key => $dpt_option_arr) {
                     
-                    if($key == 'default') continue; 
+                    if($key == 'default') 
+						continue; 
                     
                     foreach($dpt_option_arr as $dpt_option) {
                         if( is_object_in_term($post_id, $key, $dpt_option['value']) ) {
@@ -186,7 +190,7 @@ class DefaultPostThumbnailPlugin {
 		
 		if(empty($size))
 			return $other_attr;
-				
+		
 		if(is_array($size)) {
 			$width = $size[0];
 			$height = $size[1];
@@ -248,7 +252,7 @@ class DefaultPostThumbnailPlugin {
 			//Temporarily remove filter
 			remove_filter('get_post_metadata', array('DefaultPostThumbnailPlugin', 'filter_get_post_metadata'), true, 4);
 			
-			//check if there is a existing thumbnail for this post
+			//check if there is an existing thumbnail for this post
 			$result = get_metadata('post', $object_id, $meta_key, $single);
 			
 			if(empty($result))
@@ -395,5 +399,5 @@ if ( is_admin() ){
     add_filter('contextual_help', array('DefaultPostThumbnailPlugin', 'contextual_help'), 10, 3);
 } else {
 	// non admin actions
-	add_filter('get_post_metadata', array('DefaultPostThumbnailPlugin', 'filter_get_post_metadata'), true, 4);
+	//add_filter('get_post_metadata', array('DefaultPostThumbnailPlugin', 'filter_get_post_metadata'), true, 4);
 }

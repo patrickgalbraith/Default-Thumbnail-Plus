@@ -53,7 +53,7 @@
                             </select>
                         </td>
                         <td style="color:#CCC">
-                             <input name="filter_value_<?php echo $count; ?>" type="text" value="<?php echo $dpt_option['value']; ?>" class="filter_value regular-text" style="width: 100px;" required="required" />
+                             <input name="filter_value_<?php echo $count; ?>" type="text" value="<?php echo is_array($dpt_option['value']) ? implode(', ', $dpt_option['value']) : $dpt_option['value']; ?>" class="filter_value regular-text" style="width: 100px;" required="required" />
                         </td>
                         <td class="row_description"></td>
                         <td class="row_actions"><a href="javascript:void(0)" onclick="dpt_remove_row(this)"><img alt="Delete Icon" src="<?php echo plugins_url('/default-thumbnail-plus/img/icon-delete.png'); ?>" /></a></td>
