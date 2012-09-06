@@ -85,13 +85,14 @@ class DefaultPostThumbnailPlugin {
         if ( $post_thumbnail_id ) {
             // 1. Do nothing as this will be handled by the core function
         } else {
-            
+			
             // If post_id is an excluded post then return default output
             if(in_array($post_id, get_option('dpt_excluded_posts')))
-                return $html;
-            
+				return $html;
+			
             $dpt_options = get_option('dpt_options');
             $default_post_thumbnail = FALSE;
+			$size = apply_filters( 'post_thumbnail_size', $size );
             
             // 2. Custom field
             if(get_option('dpt_meta_key')) {
@@ -107,7 +108,7 @@ class DefaultPostThumbnailPlugin {
 					//This means the $default_post_thumbnail contains a link to an image not ideal but we will try to deal with it as best we can
 					$other_attr = self::get_attr_string($size);
                     
-                    return '<img src="'.$default_post_thumbnail.'" '.$other_attr.' />';
+                    $default_post_thumbnail = '<img src="'.$default_post_thumbnail.'" '.$other_attr.' />';
                 }
             }
             
@@ -126,7 +127,7 @@ class DefaultPostThumbnailPlugin {
 				if(!empty($matches[1][0])) {
 					$other_attr = self::get_attr_string($size);
 					$image_src = $matches[1][0];
-					return '<img src="'.$image_src.'" '.$other_attr.' />'; 
+					$default_post_thumbnail = '<img src="'.$image_src.'" '.$other_attr.' />'; 
 				}
 			}
 			
@@ -137,7 +138,7 @@ class DefaultPostThumbnailPlugin {
 				
 				if(!empty($video_image_url)) {
 					$other_attr = self::get_attr_string($size);
-					return '<img src="'.$video_image_url.'" '.$other_attr.' />'; 
+					$default_post_thumbnail = '<img src="'.$video_image_url.'" '.$other_attr.' />'; 
 				}
 			}
 			
@@ -159,28 +160,23 @@ class DefaultPostThumbnailPlugin {
             // 7. If the post has no attachment load the default thumbnail id
             if($default_post_thumbnail === FALSE) 
                 $default_post_thumbnail = $dpt_options['default']['attachment_id'];
-            
-			if($return_id) {
-				if(is_numeric($default_post_thumbnail))
-					return $default_post_thumbnail;
-				else 
-					return null;
+			
+			if(!is_numeric($default_post_thumbnail)) {
+				$html = $default_post_thumbnail;
+			} else {
+				do_action( 'begin_fetch_post_thumbnail_html', $post_id, $default_post_thumbnail, $size ); // for "Just In Time" filtering of all of wp_get_attachment_image()'s filters
+				$html = wp_get_attachment_image( intval($default_post_thumbnail), $size, false, $attr );
+				do_action( 'end_fetch_post_thumbnail_html', $post_id, $default_post_thumbnail, $size );
 			}
-			
-			if(!is_numeric($default_post_thumbnail))
-				return $default_post_thumbnail;
-			
-            // 8. If option is still not set then return
-            if($default_post_thumbnail === FALSE) 
-                return $html;
-            
-            $size = apply_filters( 'post_thumbnail_size', $size );
-            
-            do_action( 'begin_fetch_post_thumbnail_html', $post_id, $default_post_thumbnail, $size ); // for "Just In Time" filtering of all of wp_get_attachment_image()'s filters
-            $html = wp_get_attachment_image( intval($default_post_thumbnail), $size, false, $attr );
-            do_action( 'end_fetch_post_thumbnail_html', $post_id, $default_post_thumbnail, $size );
         }
         
+		if($return_id) {
+			if(is_numeric($default_post_thumbnail))
+				return $default_post_thumbnail;
+			else 
+				return null;
+		}
+		
         return $html;
     }
     
@@ -399,5 +395,5 @@ if ( is_admin() ){
     add_filter('contextual_help', array('DefaultPostThumbnailPlugin', 'contextual_help'), 10, 3);
 } else {
 	// non admin actions
-	//add_filter('get_post_metadata', array('DefaultPostThumbnailPlugin', 'filter_get_post_metadata'), true, 4);
+	add_filter('get_post_metadata', array('DefaultPostThumbnailPlugin', 'filter_get_post_metadata'), true, 4);
 }
