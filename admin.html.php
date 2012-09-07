@@ -94,7 +94,7 @@
             <fieldset>
                 <legend class="screen-reader-text"><span>Automatically use first attachment as fallback if available</span></legend>
                 <label for="dpt_use_first_attachment">
-                    <input name="dpt_use_first_attachment" type="checkbox" id="dpt_use_first_attachment" value="true" <?php echo ($dpt_use_first_attachment == true) ? 'checked="checked"' : ''; ?> />
+                    <input name="dpt_use_first_attachment" type="checkbox" id="dpt_use_first_attachment" value="1" <?php echo ($dpt_use_first_attachment == true) ? 'checked="checked"' : ''; ?> />
                     Use image attachment if available
                 </label>
             </fieldset>
@@ -105,18 +105,18 @@
             <fieldset>
                 <legend class="screen-reader-text"><span>Automatically use first embedded image</span></legend>
                 <label for="dpt_use_embedded_img">
-                    <input name="dpt_use_embedded_img" type="checkbox" id="dpt_use_embedded_img" value="true" <?php echo ($dpt_use_embedded_img == true) ? 'checked="checked"' : ''; ?> />
+                    <input name="dpt_use_embedded_img" type="checkbox" id="dpt_use_embedded_img" value="1" <?php echo ($dpt_use_embedded_img == true) ? 'checked="checked"' : ''; ?> />
                     Use embedded image if available
                 </label>
             </fieldset>
-            <span class="description">Automatically use the post's first available embedded image for the thumbnail.</span>
+            <span class="description">Automatically use the post's first available embedded image for the thumbnail. This is useful if you embed external images.</span>
         </p>
-        
+       
         <p style="margin-top:25px;">
             <fieldset>
                 <legend class="screen-reader-text"><span>Automatically use first embedded video</span></legend>
                 <label for="dpt_use_embedded_video">
-                    <input name="dpt_use_embedded_video" type="checkbox" id="dpt_use_embedded_video" value="true" <?php echo ($dpt_use_embedded_video == true) ? 'checked="checked"' : ''; ?> />
+                    <input name="dpt_use_embedded_video" type="checkbox" id="dpt_use_embedded_video" value="1" <?php echo ($dpt_use_embedded_video == true) ? 'checked="checked"' : ''; ?> />
                     Use embedded video thumbnail if available
                 </label>
             </fieldset>
@@ -133,6 +133,22 @@
             Excluded posts
             <input id="dpt_excluded_posts" class="regular-text" type="text" value="<?php echo implode(', ', $dpt_excluded_posts); ?>" name="dpt_excluded_posts">
             <br/><span class="description">List of posts to be ignored by this plugin. Comma separated e.g. 10, 2, 7, 14</span>
+        </p>
+        
+        <p style="margin-top:25px;">
+            <fieldset>
+                <legend class="screen-reader-text"><span>Enable or disable plugin hooks (for developers only).</span></legend>
+                <label for="dpt_hook_post_thumbnail_html">
+                    <input name="dpt_hook_post_thumbnail_html" type="checkbox" id="dpt_hook_post_thumbnail_html" value="1" <?php echo $dpt_hook_post_thumbnail_html == true ? 'checked="checked"' : ''; ?> />
+                    Filter post_thumbnail_html
+                </label>
+                &nbsp;&nbsp;&nbsp;
+                <label for="dpt_hook_post_meta">
+                    <input name="dpt_hook_post_meta" type="checkbox" id="dpt_hook_post_meta" value="1" <?php echo $dpt_hook_post_meta == true ? 'checked="checked"' : ''; ?> />
+                    Filter get_post_metadata
+                </label>
+            </fieldset>
+            <span class="description">Enable or disable plugin hooks. For developers only, see documentation for how to invoke the plugin manually when hooks are disabled.</span>
         </p>
         
         <br/>
