@@ -53,7 +53,7 @@
                             </select>
                         </td>
                         <td style="color:#CCC">
-                             <input name="filter_value_<?php echo $count; ?>" type="text" value="<?php echo is_array($dpt_option['value']) ? implode(', ', $dpt_option['value']) : $dpt_option['value']; ?>" class="filter_value regular-text" style="width: 100px;" required="required" />
+                             <input name="filter_value_<?php echo $count; ?>" type="text" value="<?php echo is_array($dpt_option['value']) ? implode(', ', $dpt_option['value']) : $dpt_option['value']; ?>" class="filter_value regular-text" style="width: 100%;" required="required" />
                         </td>
                         <td class="row_description"></td>
                         <td class="row_actions"><a href="javascript:void(0)" onclick="dpt_remove_row(this)"><img alt="Delete Icon" src="<?php echo plugins_url('/default-thumbnail-plus/img/icon-delete.png'); ?>" /></a></td>
@@ -76,7 +76,7 @@
                         </select>
                     </td>
                     <td style="color:#CCC">
-                         <input type="text" value="" class="filter_value regular-text" style="width: 100px;" required="required" />
+                         <input type="text" value="" class="filter_value regular-text" style="width: 100%;" required="required" />
                     </td>
                     <td class="row_description"></td>
                     <td class="row_actions"><a href="javascript:void(0)" onclick="dpt_remove_row(this)"><img alt="Delete Icon" src="<?php echo plugins_url('/default-thumbnail-plus/img/icon-delete.png'); ?>" /></a></td>
@@ -133,6 +133,20 @@
             Excluded posts
             <input id="dpt_excluded_posts" class="regular-text" type="text" value="<?php echo implode(', ', $dpt_excluded_posts); ?>" name="dpt_excluded_posts">
             <br/><span class="description">List of posts to be ignored by this plugin. Comma separated e.g. 10, 2, 7, 14</span>
+        </p>
+        
+        <br />
+        <h3>Advanced Options</h3>
+        
+        <p style="margin-top:25px;">
+            <fieldset>
+                <legend class="screen-reader-text"><span>Automatically cache external images</span></legend>
+                <label for="dpt_use_image_cache">
+                    <input name="dpt_use_image_cache" type="checkbox" id="dpt_use_image_cache" value="1" <?php echo ($dpt_use_image_cache == true) ? 'checked="checked"' : ''; ?> />
+                    Cache and resize external images
+                </label>
+            </fieldset>
+            <span class="description">Automatically resize, crop and cache external images &amp; video thumbnails. Recommended option, however doesn't work with some server configurations.</span>
         </p>
         
         <p style="margin-top:25px;">

@@ -35,7 +35,7 @@ if ( ! function_exists( 'add_action' ) ) {
 // JavaScript
 add_action( 'admin_print_scripts', 'dtp_slt_fs_scripts' );
 function dtp_slt_fs_scripts() {
-	wp_enqueue_script( 'slt-file-select', plugins_url( '/default-thumbnail-plus/slt-file-select.js' ), array( 'jquery', 'media-upload', 'thickbox' ) );
+	wp_enqueue_script( 'slt-file-select', plugins_url( '/default-thumbnail-plus/include/slt-file-select.js'), array( 'jquery', 'media-upload', 'thickbox' ) );
 	$protocol = isset( $_SERVER[ 'HTTPS' ] ) ? 'https://' : 'http://';
 	wp_localize_script( 'slt-file-select', 'slt_file_select', array(
 		'ajaxurl'			=> admin_url( 'admin-ajax.php', $protocol ),
