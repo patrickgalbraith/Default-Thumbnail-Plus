@@ -3,7 +3,7 @@
 Plugin Name: Default Thumbnail Plus
 Plugin URI: http://www.pjgalbraith.com/2011/12/default-thumbnail-plus/
 Description: Add a default thumbnail image to post's with no post_thumbnail set.
-Version: 1.0.2
+Version: 1.0.2.1
 Author: Patrick Galbraith, gyrus
 Author URI: http://www.pjgalbraith.com
 License: GPL2 
@@ -87,26 +87,29 @@ class DefaultPostThumbnailPlugin {
         
         //Temporarily remove filter to retrieve default metadata
         self::remove_filter_post_metadata();
+		
         $post_thumbnail_id = get_metadata('post', $post_id, '_thumbnail_id');
-        
         if(is_array($post_thumbnail_id))
             $post_thumbnail_id = reset($post_thumbnail_id);
-        
+			
         self::add_filter_post_metadata();
+		
+		$size = apply_filters('post_thumbnail_size', $size);
+		$dpt_options = get_option('dpt_options');
+        $post = null;
         
         $default_post_thumbnail = FALSE;
         
-        if ( $post_thumbnail_id ) {
-            
+		if($post_thumbnail_id) {
             // 1. Use the manually chosen featured image
-            $default_post_thumbnail = $post_thumbnail_id;
-            
-        } else if(!in_array($post_id, get_option('dpt_excluded_posts'))){
-            
-            $dpt_options = get_option('dpt_options');
-            $size = apply_filters( 'post_thumbnail_size', $size );
-            $post = null;
-            
+            $default_post_thumbnail = intval($post_thumbnail_id);
+																				
+			if(!self::post_attachment_exists($default_post_thumbnail))
+				$default_post_thumbnail = FALSE;																
+        }
+										
+		if($default_post_thumbnail === FALSE && !in_array($post_id, get_option('dpt_excluded_posts'))){
+			            
             // 2. Custom field
             if(get_option('dpt_meta_key')) {
                 $default_post_thumbnail = get_post_meta($post_id, get_option('dpt_meta_key'), true);
@@ -122,9 +125,9 @@ class DefaultPostThumbnailPlugin {
                     $default_post_thumbnail = false;
                 } else {
                     //This means the $default_post_thumbnail contains a link to an image not ideal but we will try to deal with it as best we can
-                    $other_attr = self::get_attr_string($size);
+                    $size_attr_str = self::get_attr_string($size);
                     
-                    $default_post_thumbnail = '<img src="'.$default_post_thumbnail.'" '.$other_attr.' />';
+                    $default_post_thumbnail = '<img src="'.$default_post_thumbnail.'" '.$size_attr_str.' '.$attr.' />';
                 }
             }
 
@@ -141,9 +144,9 @@ class DefaultPostThumbnailPlugin {
                 preg_match_all( '/<img.+src=[\'"]([^\'"]+)[\'"].*>/i', $post->post_content, $matches);
                 
                 if(!empty($matches[1][0])) {
-                    $other_attr = self::get_attr_string($size);
+                    $size_attr_str = self::get_attr_string($size);
                     $image_src = $matches[1][0];
-                    $default_post_thumbnail = '<img src="'.$image_src.'" '.$other_attr.' />'; 
+                    $default_post_thumbnail = '<img src="'.$image_src.'" '.$size_attr_str.' '.$attr.' />'; 
                 }
             }
 
@@ -156,8 +159,8 @@ class DefaultPostThumbnailPlugin {
                 $video_image_url = self::get_video_image($post->post_content);
                 
                 if(!empty($video_image_url)) {
-                    $other_attr = self::get_attr_string($size);
-                    $default_post_thumbnail = '<img src="'.$video_image_url.'" '.$other_attr.' />'; 
+                    $size_attr_str = self::get_attr_string($size);
+                    $default_post_thumbnail = '<img src="'.$video_image_url.'" '.$size_attr_str.' '.$attr.' />'; 
                 }
             }
 
