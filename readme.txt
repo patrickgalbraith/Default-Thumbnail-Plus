@@ -3,7 +3,7 @@ Contributors: pjgalbraith
 Donate link: http://www.pjgalbraith.com/2011/12/default-thumbnail-plus/
 Tags: thumbnail, post-plugins, default thumbnail, auto thumbnail, post-thumbnail, post thumbnail
 Requires at least: 3.0.0
-Tested up to: 3.3
+Tested up to: 3.4.2
 Stable tag: trunk
 
 Add a default thumbnail image to post's with no post_thumbnail set.
