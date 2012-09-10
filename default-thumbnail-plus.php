@@ -43,7 +43,7 @@ class DefaultPostThumbnailPlugin {
         'dpt_excluded_posts' => array(),
         'dpt_hook_post_meta' => true,
         'dpt_hook_post_thumbnail_html' => true,
-		'dpt_use_image_cache' => false
+        'dpt_use_image_cache' => false
     );
     
     static function install() {
@@ -69,8 +69,8 @@ class DefaultPostThumbnailPlugin {
         
         register_setting( 'dpp-options', 'dpt_hook_post_meta' );
         register_setting( 'dpp-options', 'dpt_hook_post_thumbnail_html' );
-		
-		register_setting( 'dpp-options', 'dpt_use_image_cache' );
+        
+        register_setting( 'dpp-options', 'dpt_use_image_cache' );
     }
     
     /*-------------------------------------------------------------
@@ -90,29 +90,29 @@ class DefaultPostThumbnailPlugin {
         
         //Temporarily remove filter to retrieve default metadata
         self::remove_filter_post_metadata();
-		
+        
         $post_thumbnail_id = get_metadata('post', $post_id, '_thumbnail_id');
         if(is_array($post_thumbnail_id))
             $post_thumbnail_id = reset($post_thumbnail_id);
-			
+            
         self::add_filter_post_metadata();
-		
-		$size = apply_filters('post_thumbnail_size', $size);
-		$dpt_options = get_option('dpt_options');
+        
+        $size = apply_filters('post_thumbnail_size', $size);
+        $dpt_options = get_option('dpt_options');
         $post = null;
         
         $default_post_thumbnail = FALSE;
         
-		if($post_thumbnail_id) {
+        if($post_thumbnail_id) {
             // 1. Use the manually chosen featured image
             $default_post_thumbnail = intval($post_thumbnail_id);
-																				
-			if(!self::post_attachment_exists($default_post_thumbnail))
-				$default_post_thumbnail = FALSE;																
+                                                                                
+            if(!self::post_attachment_exists($default_post_thumbnail))
+                $default_post_thumbnail = FALSE;                                                                
         }
-										
-		if($default_post_thumbnail === FALSE && !in_array($post_id, get_option('dpt_excluded_posts'))){
-			            
+                                        
+        if($default_post_thumbnail === FALSE && !in_array($post_id, get_option('dpt_excluded_posts'))){
+                        
             // 2. Custom field
             if(get_option('dpt_meta_key')) {
                 $default_post_thumbnail = get_post_meta($post_id, get_option('dpt_meta_key'), true);
@@ -213,8 +213,8 @@ class DefaultPostThumbnailPlugin {
     static function get_attr_string($size, $return_array = false) {
         global $_wp_additional_image_sizes;
         $other_attr = '';
-		$width = null;
-		$height = null;
+        $width = null;
+        $height = null;
         
         if(empty($size))
             return $other_attr;
@@ -222,21 +222,21 @@ class DefaultPostThumbnailPlugin {
         if(is_array($size)) {
             $width = $size[0];
             $height = $size[1];
-			
+            
             $other_attr = image_hwstring($width, $height).'class="attachment-'.$width.'x'.$height.' wp-post-image"';
         } else if( isset( $_wp_additional_image_sizes[$size] ) ) {
             $width = $_wp_additional_image_sizes[$size]['width'];
             $height = $_wp_additional_image_sizes[$size]['height'];
-			
+            
             $other_attr = image_hwstring($width, $height).'class="attachment-'.$size.' wp-post-image"';
         }
-		
-		if($return_array) {
-			if($width !== null && $height !== null)
-				return array($width, $height);
-			else
-				return array();
-		}
+        
+        if($return_array) {
+            if($width !== null && $height !== null)
+                return array($width, $height);
+            else
+                return array();
+        }
         
         return $other_attr;
     }
@@ -276,78 +276,93 @@ class DefaultPostThumbnailPlugin {
         // ...
         return false;
     }
-	
-	//Returns the image href. Will autmatically cache and resize/crop the image depending on the dpt_use_image_cache setting.
-	static function get_cache_image($src, $size) {
-		
-		if(get_option('dpt_use_image_cache', false) === false) {
-			return $src;
-		}
-		
-		if(!is_array($size))
-			$size = self::get_attr_string($size, true);
-		
-		if(isset($size[0]) && isset($size[1]))
-			$size_str = $size[0].'x'.$size[1];
-		else
-			$size_str = '';
-		
-		add_filter('upload_dir', array('DefaultPostThumbnailPlugin', 'upload_dir'));
-		$upload_dir = wp_upload_dir();
-		remove_filter('upload_dir', array('DefaultPostThumbnailPlugin', 'upload_dir'));
-		
-		$file_name = sha1($src);
-		$file_ext = pathinfo($src, PATHINFO_EXTENSION);
-		$orig_file_name = $file_name.'.'.$file_ext;
-		$resize_file_name = !empty($size_str) ? $file_name.'-'.$size_str.'.'.$file_ext : $orig_file_name;
-		
-		// Check if it is cached already
-		if(file_exists($upload_dir['path'].DIRECTORY_SEPARATOR.$resize_file_name)) {
-			return $upload_dir['url'].DIRECTORY_SEPARATOR.$resize_file_name;
-		}
-		
-		////////////////////////
-		//      CACHE IT      //
-		////////////////////////
-		$old_ua = ini_get('user_agent');
-		ini_set('user_agent', 'Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US) AppleWebKit/534.13 (KHTML, like Gecko) Chrome/9.0.597.107 Safari/534.13'); //change default user agent this fixes issues with images linked from sites such as Wikipedia
-		
-		$src_file = @file_get_contents($src, false, $context);
-		
-		ini_set('user_agent', $old_ua);
-		
-		if($src_file === false)
-			return $src;
-		
-		$result = @file_put_contents($upload_dir['path'].DIRECTORY_SEPARATOR.$orig_file_name, $src_file);
-		
-		if($result === false)
-			return $src;
-		
-		if(isset($size[0]) && isset($size[1])) {
-			$resized_file = image_resize(
-									$upload_dir['path'].DIRECTORY_SEPARATOR.$orig_file_name, 
-									$size[0],
-									$size[1],
-									true,
-									$size_str, 
-									$upload_dir['path'].DIRECTORY_SEPARATOR.$resize_file_name
-								  );
-			if(is_wp_error($resized_file))
-				return $src;
-			
-			return $resized_file;
-		} else {
-			return $upload_dir['path'].DIRECTORY_SEPARATOR.$orig_file_name;
-		}
-	}
-	
-	static function upload_dir($upload) {
-		$upload['subdir']	= DIRECTORY_SEPARATOR.'default-thumb-plus';
-		$upload['path']		= $upload['basedir'] . $upload['subdir'];
-		$upload['url']		= $upload['baseurl'] . $upload['subdir'];
-		return $upload;
-	}
+    
+    //Returns the image href. Will autmatically cache and resize/crop the image depending on the dpt_use_image_cache setting.
+    static function get_cache_image($src, $size) {
+        
+        if(get_option('dpt_use_image_cache', false) === false) {
+            return $src;
+        }
+        
+        if(!is_array($size))
+            $size = self::get_attr_string($size, true);
+        
+        if(isset($size[0]) && isset($size[1]))
+            $size_str = $size[0].'x'.$size[1];
+        else
+            $size_str = '';
+        
+        add_filter('upload_dir', array('DefaultPostThumbnailPlugin', 'upload_dir'));
+        $upload_dir = wp_upload_dir();
+        remove_filter('upload_dir', array('DefaultPostThumbnailPlugin', 'upload_dir'));
+        
+        $file_name = sha1($src);
+        $file_ext = pathinfo($src, PATHINFO_EXTENSION);
+        $orig_file_name = $file_name.'.'.$file_ext;
+        $resize_file_name = !empty($size_str) ? $file_name.'-'.$size_str.'.'.$file_ext : $orig_file_name;
+        
+        // Check if it is cached already
+        if(file_exists($upload_dir['path'].DIRECTORY_SEPARATOR.$resize_file_name)) {
+            return $upload_dir['url'].DIRECTORY_SEPARATOR.$resize_file_name;
+        }
+        
+        ////////////////////////
+        //      CACHE IT      //
+        ////////////////////////
+        $src_file = false;
+        
+        $old_ua = ini_get('user_agent');
+        ini_set('user_agent', 'Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US) AppleWebKit/534.13 (KHTML, like Gecko) Chrome/9.0.597.107 Safari/534.13'); //change default user agent this fixes issues with images linked from sites such as Wikipedia
+        
+        if(ini_get('allow_url_fopen') != 1)
+            @ini_set('allow_url_fopen', '1');
+        
+        if(ini_get('allow_url_fopen') != 1) {
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $src);
+            curl_setopt($ch, CURLOPT_FAILONERROR, 1);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 3);
+            $src_file = curl_exec($ch);
+            curl_close($ch);
+        } else {
+            $src_file = @file_get_contents($src, false);
+        }
+        
+        ini_set('user_agent', $old_ua);
+        
+        if($src_file === false)
+            return $src;
+        
+        $result = @file_put_contents($upload_dir['path'].DIRECTORY_SEPARATOR.$orig_file_name, $src_file);
+        
+        if($result === false)
+            return $src;
+        
+        if(isset($size[0]) && isset($size[1])) {
+            $resized_file = image_resize(
+                                    $upload_dir['path'].DIRECTORY_SEPARATOR.$orig_file_name, 
+                                    $size[0],
+                                    $size[1],
+                                    true,
+                                    $size_str, 
+                                    $upload_dir['path'].DIRECTORY_SEPARATOR.$resize_file_name
+                                  );
+            if(is_wp_error($resized_file))
+                return $src;
+            
+            return $resized_file;
+        } else {
+            return $upload_dir['path'].DIRECTORY_SEPARATOR.$orig_file_name;
+        }
+    }
+    
+    static function upload_dir($upload) {
+        $upload['subdir']    = DIRECTORY_SEPARATOR.'default-thumb-plus';
+        $upload['path']        = $upload['basedir'] . $upload['subdir'];
+        $upload['url']        = $upload['baseurl'] . $upload['subdir'];
+        return $upload;
+    }
     
     /* @param string|array $metadata - Always null for post metadata.
      * @param int $object_id - Post ID for post metadata
@@ -453,7 +468,7 @@ class DefaultPostThumbnailPlugin {
         update_option( 'dpt_use_embedded_video', isset($_POST['dpt_use_embedded_video']) && $_POST['dpt_use_embedded_video'] == true ? true : false );
         update_option( 'dpt_hook_post_meta', isset($_POST['dpt_hook_post_meta']) && $_POST['dpt_hook_post_meta'] == true ? true : false );
         update_option( 'dpt_hook_post_thumbnail_html', isset($_POST['dpt_hook_post_thumbnail_html']) && $_POST['dpt_hook_post_thumbnail_html'] == true ? true : false );
-		update_option( 'dpt_use_image_cache', isset($_POST['dpt_use_image_cache']) && $_POST['dpt_use_image_cache'] == true ? true : false );
+        update_option( 'dpt_use_image_cache', isset($_POST['dpt_use_image_cache']) && $_POST['dpt_use_image_cache'] == true ? true : false );
         
         $excluded_posts_arr = explode(',', $_POST['dpt_excluded_posts']); //explode comma separated string on comma
         array_walk($excluded_posts_arr, create_function('&$val', '$val = trim($val);')); //trim spaces from all post ids
