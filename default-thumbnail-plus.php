@@ -3,7 +3,7 @@
 Plugin Name: Default Thumbnail Plus
 Plugin URI: http://www.pjgalbraith.com/2011/12/default-thumbnail-plus/
 Description: Add a default thumbnail image to post's with no post_thumbnail set.
-Version: 1.0.2.2
+Version: 1.0.2.3
 Author: Patrick Galbraith, gyrus
 Author URI: http://www.pjgalbraith.com
 License: GPL2 
