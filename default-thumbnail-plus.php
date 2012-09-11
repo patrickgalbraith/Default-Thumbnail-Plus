@@ -351,9 +351,9 @@ class DefaultPostThumbnailPlugin {
             if(is_wp_error($resized_file))
                 return $src;
             
-            return $resized_file;
+            return $upload_dir['url'].DIRECTORY_SEPARATOR.$resize_file_name;
         } else {
-            return $upload_dir['path'].DIRECTORY_SEPARATOR.$orig_file_name;
+            return $upload_dir['url'].DIRECTORY_SEPARATOR.$orig_file_name;
         }
     }
     
@@ -540,8 +540,8 @@ function dpt_post_thumbnail_html($post_id, $size = null, $attr = '') {
     return DefaultPostThumbnailPlugin::default_post_thumbnail_html('', $post_id, null, $size, $attr);
 }
 //Global helper function which returns the image src for a specified post
-function dpt_post_thumbnail_src($post_id, $size) {
-    $img_tag = get_the_post_thumbnail($post_id, $size);
+function dpt_post_thumbnail_src($post_id, $size = null) {
+    $img_tag = DefaultPostThumbnailPlugin::default_post_thumbnail_html('', $post_id, null, $size, '');
     $matches = array();
     
     preg_match('/src=[\'"](.*?)[\'"]/i', $img_tag, $matches); //yes it is bad to use regex to parse html (-_-);
